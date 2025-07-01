@@ -6,7 +6,7 @@ import streamlit as st
 
 
 # print(pd.__version__)
-JAVADO = "JAVADO UPLOAD.xlsx"
+JAVADO = "0107025 GARDEN FRESH.xlsx" #"JAVADO UPLOAD.xlsx"
 PLU_ACTIVE = "PLU-Active-List.xlsx"
 TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
 
@@ -15,9 +15,6 @@ TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are re
 
 def load_products(path: str) -> list[Product]:
     df = pd.read_excel(path)
-
-
-
     df.columns = df.columns.str.strip()
 
     products = []
@@ -83,82 +80,92 @@ def duplicate_barcodes(products: list[Product]):
     return None
 
 
-def main():
+# def main():
 
-    products = load_products(JAVADO)
-    # for product in products:
-    #     print(product)
-    # #     print(product.barcode)
-    # #     print(product.tarriff)
+#     products = load_products(JAVADO)
+#     # for product in products:
+#     #     print(product)
+#     # #     print(product.barcode)
+#     # #     print(product.tarriff)
 
-    all_products = get_all_plu(PLU_ACTIVE)
-    # print(all_products)
+#     all_products = get_all_plu(PLU_ACTIVE)
+#     # print(all_products)
 
-    output = check_duplicates(products, all_products) # Output after duplicate check
-    # print(output)
+#     output = check_duplicates(products, all_products) # Output after duplicate check
+#     # print(output)
 
 
 
-    # for i in range(5):
-    #    print(all_products[i])
+#     # for i in range(5):
+#     #    print(all_products[i])
 
-    # for key, value in output.items():
-    #    print(f"Duplicate item with PLU: {key} at line {(value)}")
+#     # for key, value in output.items():
+#     #    print(f"Duplicate item with PLU: {key} at line {(value)}")
    
-    plu_errors = []
-    desc_len_errors = []
-    bad_char_errors = []
-    decimal_errors = []
+#     plu_errors = []
+#     desc_len_errors = []
+#     bad_char_errors = []
+#     decimal_errors = []
 
-    for product in products:
-        if product.plu_len() is not None:
-            plu_errors.append(product.plu_len())
+#     for product in products:
+#         if product.plu_len() is not None:
+#             plu_errors.append(product.plu_len())
 
-    for product in products:
-        if product.desc_len() is not None:
-            desc_len_errors.append(product.desc_len())
+#     for product in products:
+#         if product.desc_len() is not None:
+#             desc_len_errors.append(product.desc_len())
 
-    for product in products:
-        if product.bad_char() is not None:
-            bad_char_errors.append(product.bad_char())
+#     for product in products:
+#         if product.bad_char() is not None:
+#             bad_char_errors.append(product.bad_char())
    
-    for product in products:
-        if product.decimal_format() is not None:
-            decimal_errors.append(product.decimal_format())
+#     for product in products:
+#         if product.decimal_format() is not None:
+#             decimal_errors.append(product.decimal_format())
 
 
 
-    if len(plu_errors) > 0:
-        print("\n All PLU Code Length Errors:")
-        for error in plu_errors:
-            print(error)
-            st.write(error)
+#     if len(plu_errors) > 0:
+#         print("\n All PLU Code Length Errors:")
+#         for error in plu_errors:
+#             print(error)
+#             # st.write(error)
+#     else:
+#         print("\n PLU Codes are all valid.")
 
-    if len(desc_len_errors) > 0:
-        print("\n All Product Description Length Errors:")
-        for error in desc_len_errors:
-            print(error)
-            st.write(error)
+#     if len(desc_len_errors) > 0:
+#         print("\n All Product Description Length Errors:")
+#         for error in desc_len_errors:
+#             print(error)
+#             # st.write(error)
+#     else:
+#         print("\n Product descriptions are all valid.")
 
     
-    if len(bad_char_errors) > 0:
-        print("\n All Unusable Character Errors:")
-        for error in bad_char_errors:
-            print(error)
-            st.write(error)
+#     if len(bad_char_errors) > 0:
+#         print("\n All Unusable Character Errors:")
+#         for error in bad_char_errors:
+#             print(error)
+#             # st.write(error)
+#     else:
+#         print("\n Characters are all valid.")
 
-    if len(decimal_errors) > 0:
-        print("\nAll Decimal Formatting Erors:")
-        for error in decimal_errors:
-            print(error)
-            st.write(error)
+#     if len(decimal_errors) > 0:
+#         print("\nAll Decimal Formatting Erors:")
+#         for error in decimal_errors:
+#             print(error)
+#             # st.write(error)
+#     else:
+#         print("\n Decimal formatting is all valid.")
 
-    if duplicate_barcodes(products) is not None:
-        print("\n All Duplicated Barcode Errors:")
-        print(duplicate_barcodes(products))
-        st.write(duplicate_barcodes(products))
+#     if duplicate_barcodes(products) is not None:
+#         print("\n All Duplicate Barcode Errors:")
+#         print(duplicate_barcodes(products))
+#         # st.write(duplicate_barcodes(products))
+#     else:
+#         print("\n Barcodes are all valid.")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
