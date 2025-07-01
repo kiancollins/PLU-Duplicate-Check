@@ -1,37 +1,57 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
+from product_class import Product
+from parser import load_products, get_all_plu, check_duplicates, duplicate_barcodes
 
-st.title("PLU Duplicate Checker")
+st.title("Product Validation Checker")
 
-# Upload section
 javado_file = st.file_uploader("Upload JAVADO Excel", type=["xlsx"])
-active_file = st.file_uploader("Upload PLU Active List", type=["xlsx"])
+active_file = st.file_uploader("Upload Active Product List", type=["xlsx"])
 
 if javado_file and active_file:
-    # Read files
-    javado_df = pd.read_excel(javado_file)
-    active_df = pd.read_excel(active_file)
+    products = load_products(javado_file)
+    all_products = get_all_plu(active_file)
 
-    # Clean headers
-    javado_df.columns = javado_df.columns.str.strip()
-    active_df.columns = active_df.columns.str.strip()
+    # Validation outputs
+    plu_errors = []
+    desc_len_errors = []
+    bad_char_errors = []
+    decimal_errors = []
 
-    # Extract product dict
-    product_dict = javado_df.set_index("plu code").to_dict("index")
-    all_plu = active_df["PLU"].dropna().tolist()
+    for product in products:
+        if (err := product.plu_len()):
+            plu_errors.append(err)
+        if (err := product.desc_len()):
+            desc_len_errors.append(err)
+        if (err := product.bad_char()):
+            bad_char_errors.append(err)
+        if (err := product.decimal_format()):
+            decimal_errors.append(err)
 
-    # Check duplicates
-    duplicates = {
-        key: all_plu.index(key) for key in product_dict if key in all_plu
-    }
+    barcode_errors = duplicate_barcodes(products)
 
-    # Show results
-    if duplicates:
-        st.success(f"{len(duplicates)} duplicate(s) found.")
-        st.write("### Duplicate PLUs:")
-        st.dataframe(pd.DataFrame({
-            "PLU Code": list(duplicates.keys()),
-            "Line Number in PLU Active": [i + 1 for i in duplicates.values()]
-        }))
-    else:
-        st.info("No duplicates found.")
+    # Show errors
+    if plu_errors:
+        st.subheader("All PLU Code Length Errors:")
+        for e in plu_errors:
+            st.write(e)
+
+    if desc_len_errors:
+        st.subheader("All Product Description Length Errors:")
+        for e in desc_len_errors:
+            st.write(e)
+
+    if bad_char_errors:
+        st.subheader("All Unusable Character Errors:")
+        for e in bad_char_errors:
+            st.write(e)
+
+    if decimal_errors:
+        st.subheader("All Decimal Formatting Erors:")
+        for e in decimal_errors:
+            st.write(e)
+
+    if barcode_errors:
+        st.subheader("All Duplicated Barcode Errors:")
+        for e in barcode_errors:
+            st.write(e)
