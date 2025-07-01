@@ -5,10 +5,10 @@ from collections import Counter, defaultdict
 import streamlit as st
 
 
-# print(pd.__version__)
-JAVADO = "0107025 GARDEN FRESH.xlsx" #"JAVADO UPLOAD.xlsx"
-PLU_ACTIVE = "PLU-Active-List.xlsx"
-TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
+# # print(pd.__version__)
+# JAVADO = "0107025 GARDEN FRESH.xlsx" #"JAVADO UPLOAD.xlsx"
+# PLU_ACTIVE = "PLU-Active-List.xlsx"
+# TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
 
 
 
@@ -20,23 +20,23 @@ def load_products(path: str) -> list[Product]:
     products = []
     for _, row in df.iterrows():
         product = Product(
-            code = row['plu code'],
-            description = row['Description'],
-            subgroup = row['Sub Group'],
-            supplier_code = row['3 Digit Supplier'],
-            season = row['Season'],
-            supplier_main = row['Main Supplier'],
-            cost_price = row['cost price'],
-            barcode = row['barcode'],
-            vat_rate = row['Vat Rate'],
-            rrp = row['RRP'],
-            sell_price = row['Selling Price'],
-            stg_price = row['Stg Price'],
-            tarriff = row['Tarriff Code'],
-            web = row['Web']
-
+            code = row.get('plu code'),
+            description = row.get('Description'),
+            subgroup = row.get('Sub Group'),
+            supplier_code = row.get('3 Digit Supplier'),
+            season = row.get('Season'),
+            supplier_main = row.get('Main Supplier'),
+            cost_price = row.get('cost price'),
+            barcode = row.get('barcode'),
+            vat_rate = row.get('Vat Rate'),
+            rrp = row.get('RRP'),
+            sell_price = row.get('Selling Price'),
+            stg_price = row.get('Stg Price'),        # <-- safer access
+            tarriff = row.get('Tarriff Code'),
+            web = row.get('Web')
         )
         products.append(product)
+
 
     return products
 
@@ -59,8 +59,6 @@ def check_duplicates(products: list[Product], all_products: list) -> dict[int, i
     return duplicates
 
 
-
-
 def duplicate_barcodes(products: list[Product]):
 
     barcode_to_plu = defaultdict(list)
@@ -78,6 +76,10 @@ def duplicate_barcodes(products: list[Product]):
     if len(error_list) > 0:
         return error_list
     return None
+
+
+
+
 
 
 # def main():
