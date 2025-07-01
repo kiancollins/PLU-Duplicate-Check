@@ -1,26 +1,47 @@
 import pandas as pd
+from product_class import Product
+from decimal import Decimal
+from collections import Counter, defaultdict
+import streamlit as st
+
 
 # print(pd.__version__)
-JAVADO = "JAVADO_UPLOAD.xlsx"
+JAVADO = "JAVADO UPLOAD.xlsx"
 PLU_ACTIVE = "PLU-Active-List.xlsx"
 TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
 
 
-def excel_to_dict(path: str) -> dict[int, dict]:
-    """ Reads an excel file into a dictionary.
-    Probably works only in the correct format. 
-    Will probably need to create different functions based on different spreadsheets
-    """
 
-    products_df = pd.read_excel(path) # original name has space instead of underscore  
-    # print(products_df.columns.tolist())
 
-    # keys are from the 'plu code' column
-    products_df.columns = products_df.columns.str.strip()  # Remove header
-    product_dict = products_df.set_index('plu code').to_dict('index')
+def load_products(path: str) -> list[Product]:
+    df = pd.read_excel(path)
 
-    return product_dict
 
+
+    df.columns = df.columns.str.strip()
+
+    products = []
+    for _, row in df.iterrows():
+        product = Product(
+            code = row['plu code'],
+            description = row['Description'],
+            subgroup = row['Sub Group'],
+            supplier_code = row['3 Digit Supplier'],
+            season = row['Season'],
+            supplier_main = row['Main Supplier'],
+            cost_price = row['cost price'],
+            barcode = row['barcode'],
+            vat_rate = row['Vat Rate'],
+            rrp = row['RRP'],
+            sell_price = row['Selling Price'],
+            stg_price = row['Stg Price'],
+            tarriff = row['Tarriff Code'],
+            web = row['Web']
+
+        )
+        products.append(product)
+
+    return products
 
 
 def get_all_plu(path: str) -> list[int]:
@@ -31,40 +52,113 @@ def get_all_plu(path: str) -> list[int]:
     return all_plu
 
 
-def check_duplicates(products: dict, all_products: list) -> dict[int, int]:
+def check_duplicates(products: list[Product], all_products: list) -> dict[int, int]:
     """ Returns dictionary of duplicate products' codes and what line they are at
     """
     duplicates = {}
-    for key in products.keys():
-        if key in all_products:
-            duplicates[key] = all_products.index(key)
+    for product in products:
+        if product.plu_code in all_products:
+            duplicates[product.plu_code] = all_products.index(product.plu_code)
     return duplicates
 
 
 
 
+def duplicate_barcodes(products: list[Product]):
+
+    barcode_to_plu = defaultdict(list)
+    error_list = []
+    for product in products:
+        if product.barcode:  # Skip empty or None
+            barcode_to_plu[product.barcode].append(product.plu_code)
+
+    for barcode, plu_list in barcode_to_plu.items():
+        if len(plu_list) > 1:
+            error_list.append(f"Barcode {barcode} is shared by Products: {plu_list}")
+            # print(f"Barcode {barcode} is shared by Products: {plu_list}")
+            # st.write(f"Barcode {barcode} is shared by Products: {plu_list}")
+
+    if len(error_list) > 0:
+        return error_list
+    return None
+
 
 def main():
 
-   products_dict = excel_to_dict(JAVADO) # Dictionary of products
-#    print(products_dict)
+    products = load_products(JAVADO)
+    # for product in products:
+    #     print(product)
+    # #     print(product.barcode)
+    # #     print(product.tarriff)
 
-   all_products = get_all_plu(PLU_ACTIVE)
-#    print(all_products)
+    all_products = get_all_plu(PLU_ACTIVE)
+    # print(all_products)
 
-   output = check_duplicates(products_dict, all_products) # Output after duplicate check
-#    print(output)
+    output = check_duplicates(products, all_products) # Output after duplicate check
+    # print(output)
 
 
 
-#    for i in range(5):
-#        print(all_products[i])
+    # for i in range(5):
+    #    print(all_products[i])
 
-   for key, value in output.items():
-       print(f"Duplicate item with PLU: {key} at line {(value+1)}")
+    # for key, value in output.items():
+    #    print(f"Duplicate item with PLU: {key} at line {(value)}")
    
+    plu_errors = []
+    desc_len_errors = []
+    bad_char_errors = []
+    decimal_errors = []
 
+    for product in products:
+        if product.plu_len() is not None:
+            plu_errors.append(product.plu_len())
+
+    for product in products:
+        if product.desc_len() is not None:
+            desc_len_errors.append(product.desc_len())
+
+    for product in products:
+        if product.bad_char() is not None:
+            bad_char_errors.append(product.bad_char())
    
+    for product in products:
+        if product.decimal_format() is not None:
+            decimal_errors.append(product.decimal_format())
+
+
+
+    if len(plu_errors) > 0:
+        print("\n All PLU Code Length Errors:")
+        for error in plu_errors:
+            print(error)
+            st.write(error)
+
+    if len(desc_len_errors) > 0:
+        print("\n All Product Description Length Errors:")
+        for error in desc_len_errors:
+            print(error)
+            st.write(error)
+
+    
+    if len(bad_char_errors) > 0:
+        print("\n All Unusable Character Errors:")
+        for error in bad_char_errors:
+            print(error)
+            st.write(error)
+
+    if len(decimal_errors) > 0:
+        print("\nAll Decimal Formatting Erors:")
+        for error in decimal_errors:
+            print(error)
+            st.write(error)
+
+    if duplicate_barcodes(products) is not None:
+        print("\n All Duplicated Barcode Errors:")
+        print(duplicate_barcodes(products))
+        st.write(duplicate_barcodes(products))
+
+
 if __name__ == "__main__":
     main()
 
