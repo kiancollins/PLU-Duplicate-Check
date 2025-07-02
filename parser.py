@@ -82,16 +82,20 @@ def duplicate_barcodes(products: list[Product]) -> list[str]:
 
 def find_internal_duplicates(products: list[Product]) -> list[str]:
     """Checks for duplicate PLU codes within the new product file."""
-    counts = Counter(p.plu_code for p in products)
-    return [
-        f"PLU {plu} appears {count} times in the new file"
-        for plu, count in counts.items() if count > 1
-    ]
+    counts = Counter(product.plu_code for product in products)
+    errors = []
+    for plu, count in counts.items():
+        if count > 1:
+            lines = [product.excel_line for product in products if product.plu_code == plu]
+            errors.append(f"PLU Code: {plu} appears {count} times on lines {lines}")
+    return errors
 
 
-products = load_products(NEW_PRODUCTS)
-for product in products:
-    print(product.excel_line)
+
+
+# products = load_products(NEW_PRODUCTS)
+# for product in products:
+#     print(product.excel_line)
 
 
 # def main():
