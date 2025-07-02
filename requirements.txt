@@ -1,5 +1,3 @@
 openpyxl
 streamlit
 pandas
-decimal
-collections
