@@ -29,7 +29,7 @@ if new_product_file and plu_file:
     # Error collection
     duplicate_plu_dict = check_duplicates(products, all_plu)
     duplicate_plu_errors = [
-        f"PLU {plu} is already in the system (line {line + 2})"  # +2 to match Excel row (header + 0-indexed)
+        f"Line: {line + 2} \u00A0\u00A0|\u00A0\u00A0 Product {plu} is already in the system."  # +2 to match Excel row (header + 0-indexed)
         for plu, line in duplicate_plu_dict.items()
     ]
     internal_duplicates = find_internal_duplicates(products)
@@ -50,15 +50,6 @@ if new_product_file and plu_file:
         if (e := product.decimal_format()):
             decimal_errors.append(e)
         
-
-    # Barcode duplicates
-    # barcode_dict = defaultdict(list)
-    # for p in products:
-    #     if p.barcode:
-    #         barcode_dict[p.barcode].append(p.plu_code)
-    # for barcode, codes in barcode_dict.items():
-    #     if len(codes) > 1:
-    #         barcode_errors.append(f"Barcode {barcode} is shared by: {codes}")
 
     # Show results
     def display_results(title, errors):
@@ -81,3 +72,11 @@ if new_product_file and plu_file:
 
     if not any([plu_errors, desc_errors, bad_char_errors, decimal_errors, barcode_errors]):
         st.success("All checks passed. File is ready for upload.")
+
+
+
+
+
+
+
+
