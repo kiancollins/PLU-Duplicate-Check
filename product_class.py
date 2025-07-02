@@ -38,17 +38,15 @@ class Product:
     def plu_len(self):
         """ Checks if any products have a PLU Code length over 15"""
         if len(str(self.plu_code)) > 15:
-            return f"Line {self.excel_line}  |  Product: {self.plu_code} has PLU Code length of {len(str(self.plu_code))}. Must be under 15."
+            return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has PLU Code length of {len(str(self.plu_code))}. Must be under 15."
             # print(f"Product: {self.plu_code} has PLU Code length of {len(str(self.plu_code))}. Must be under 15.")
             # st.write(f"Product: {self.plu_code} has PLU Code length of {len(str(self.plu_code))}. Must be under 15.")
 
-    def plu_duplicates(self):
-        ...
         
     def desc_len(self):
         """ Checks if any products have a Description length over 50"""
         if len(self.description) > 50:
-            return(f"Line {self.excel_line}  |  Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
+            return(f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
             # print(f"Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
             # st.write(f"Product: {self.plu_code} has description length of {len(str(self.plu_code))}. Must be under 15.")
 
@@ -61,7 +59,7 @@ class Product:
                     if any(char in value for char in BAD_CHARS):    # Check if any bad chars are in the value
                         bad_fields.append(field)
         if len(bad_fields) > 0:
-            return f"Line {self.excel_line}  |  Product: {self.plu_code} contains invalid character(s) {BAD_CHARS} in {bad_fields}"
+            return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} contains invalid character(s) {BAD_CHARS} in {bad_fields}"
             # print(f"Product: {self.plu_code} contains invalid character(s) {BAD_CHARS} in {bad_fields}")
             # st.write(f"Product: {self.plu_code} contains invalid characters {BAD_CHARS} in {bad_fields}")
 
@@ -86,7 +84,7 @@ class Product:
                     ... # Often times trade price (stg_price) will just be empty
 
         if len(errors) > 0:
-            return f"Line {self.excel_line}  |  Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less"
+            return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less"
             # print(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
             # st.write(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
 
