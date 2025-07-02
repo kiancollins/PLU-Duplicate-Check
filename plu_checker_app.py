@@ -5,7 +5,7 @@ from product_class import Product  # Make sure this is in the same folder or Pyt
 from parser import load_products, get_all_plu, duplicate_barcodes, check_duplicates, find_internal_duplicates
 
 
-st.title("Product Validation Checker")
+st.title("New Product File Validation")
 
 # File uploads
 new_product_file = st.file_uploader("Upload New Product File", type=["xlsx"])
