@@ -6,10 +6,9 @@ import streamlit as st
 
 
 # # print(pd.__version__)
-# JAVADO = "0107025 GARDEN FRESH.xlsx" #"JAVADO UPLOAD.xlsx"
+NEW_PRODUCTS = "0107025 GARDEN FRESH.xlsx" #"JAVADO UPLOAD.xlsx"
 # PLU_ACTIVE = "PLU-Active-List.xlsx"
 # TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
-
 
 
 
@@ -18,7 +17,8 @@ def load_products(path: str) -> list[Product]:
     df.columns = df.columns.str.strip()
 
     products = []
-    for _, row in df.iterrows():
+    for idx, row in df.iterrows():
+        line_number = idx + 2
         product = Product(
             code = row.get('plu code'),
             description = row.get('Description'),
@@ -31,12 +31,12 @@ def load_products(path: str) -> list[Product]:
             vat_rate = row.get('Vat Rate'),
             rrp = row.get('RRP'),
             sell_price = row.get('Selling Price'),
-            stg_price = row.get('Stg Price'),        # <-- safer access
+            stg_price = row.get('Stg Price'),   
             tarriff = row.get('Tarriff Code'),
-            web = row.get('Web')
+            web = row.get('Web'),
+            idx = line_number
         )
         products.append(product)
-
 
     return products
 
@@ -50,7 +50,7 @@ def get_all_plu(path: str) -> list[int]:
 
 
 def check_duplicates(products: list[Product], all_products: list) -> dict[int, int]:
-    """ Returns dictionary of duplicate products' codes and what line they are at
+    """ Returns dictionary of duplicate products' codes and what line they are at.
     """
     duplicates = {}
     for product in products:
@@ -59,17 +59,19 @@ def check_duplicates(products: list[Product], all_products: list) -> dict[int, i
     return duplicates
 
 
-def duplicate_barcodes(products: list[Product]):
-
+def duplicate_barcodes(products: list[Product]) -> list[str]:
+    """ Checks to see if any products in new product file has the same barcodes."""
     barcode_to_plu = defaultdict(list)
     error_list = []
+
     for product in products:
         if product.barcode:  # Skip empty or None
-            barcode_to_plu[product.barcode].append(product.plu_code)
+            barcode_to_plu[product.barcode].append((product.plu_code, product.excel_line))
 
     for barcode, plu_list in barcode_to_plu.items():
         if len(plu_list) > 1:
-            error_list.append(f"Barcode {barcode} is shared by Products: {plu_list}")
+            detail = ", ".join([f"{plu} (line {line})" for plu, line in plu_list])
+            error_list.append(f"Barcode {barcode} is shared by: {detail}")
             # print(f"Barcode {barcode} is shared by Products: {plu_list}")
             # st.write(f"Barcode {barcode} is shared by Products: {plu_list}")
 
@@ -78,8 +80,18 @@ def duplicate_barcodes(products: list[Product]):
     return None
 
 
+def find_internal_duplicates(products: list[Product]) -> list[str]:
+    """Checks for duplicate PLU codes within the new product file."""
+    counts = Counter(p.plu_code for p in products)
+    return [
+        f"PLU {plu} appears {count} times in the new file"
+        for plu, count in counts.items() if count > 1
+    ]
 
 
+products = load_products(NEW_PRODUCTS)
+for product in products:
+    print(product.excel_line)
 
 
 # def main():
