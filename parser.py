@@ -3,37 +3,38 @@ from product_class import Product
 from decimal import Decimal
 from collections import Counter, defaultdict
 import streamlit as st
+from fixes import update_all
 
 
-# # print(pd.__version__)
-NEW_PRODUCTS = "0107025 GARDEN FRESH.xlsx" #"JAVADO UPLOAD.xlsx"
-# PLU_ACTIVE = "PLU-Active-List.xlsx"
+NEW_PRODUCTS = "0107025 GARDEN FRESH.xlsx" 
+NEW_PRODUCTS_2 = "JAVADO UPLOAD.xlsx"
+PLU_ACTIVE = "PLU-Active-List.xlsx"
 # TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
 
 
 
 def load_products(path: str) -> list[Product]:
     df = pd.read_excel(path)
-    df.columns = df.columns.str.strip()
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "")
 
     products = []
     for idx, row in df.iterrows():
         line_number = idx + 2
         product = Product(
-            code = row.get('plu code'),
-            description = row.get('Description'),
-            subgroup = row.get('Sub Group'),
-            supplier_code = row.get('3 Digit Supplier'),
-            season = row.get('Season'),
-            supplier_main = row.get('Main Supplier'),
-            cost_price = row.get('cost price'),
+            code = row.get('plucode'),
+            description = row.get('description'),
+            subgroup = row.get('subgroup'),
+            supplier_code = row.get('3digitsupplier'),
+            season = row.get('season'),
+            supplier_main = row.get('mainsupplier'),
+            cost_price = row.get('costprice'),
             barcode = row.get('barcode'),
-            vat_rate = row.get('Vat Rate'),
-            rrp = row.get('RRP'),
-            sell_price = row.get('Selling Price'),
-            stg_price = row.get('Stg Price'),   
-            tarriff = row.get('Tarriff Code'),
-            web = row.get('Web'),
+            vat_rate = row.get('vatrate'),
+            rrp = row.get('rrp'),
+            sell_price = row.get('sellingprice'),
+            stg_price = row.get('stgprice'),   
+            tarriff = row.get('tarriffcode'),
+            web = row.get('web'),
             idx = line_number
         )
         products.append(product)
@@ -43,10 +44,20 @@ def load_products(path: str) -> list[Product]:
 
 def get_all_plu(path: str) -> list[int]:
     """ Read an excel of all AVOCA products into a list of PLU codes """
+    # plu_df = pd.read_excel(path)
+    # plu_df.columns = plu_df.columns.str.lower().str.strip().str.replace(" ", "")
+    # # print("Columns after normalization:", plu_df.columns.tolist())
+    # return plu_df["plu"].tolist()
+
     plu_df = pd.read_excel(path)
-    plu_df.columns = plu_df.columns.str.strip() #remove header
-    all_plu = plu_df["PLU"].tolist()
-    return all_plu
+    print("Raw columns:", plu_df.columns.tolist())  # <-- print raw header
+    plu_df.columns = plu_df.columns.str.lower().str.strip().str.replace(" ", "")
+    print("Normalized columns:", plu_df.columns.tolist())  # <-- print normalized header
+
+    if "plu" not in plu_df.columns:
+        raise KeyError("Missing 'plu' column after normalization.")
+
+    return plu_df["plu"].tolist()
 
 
 def check_duplicates(products: list[Product], all_products: list) -> dict[int, int]:
@@ -91,11 +102,26 @@ def find_internal_duplicates(products: list[Product]) -> list[str]:
     return errors
 
 
+# df = get_all_plu(PLU_ACTIVE)
 
 
-# products = load_products(NEW_PRODUCTS)
+# products = load_products(NEW_PRODUCTS_2)
 # for product in products:
 #     print(product.excel_line)
+
+
+# df = pd.read_excel(NEW_PRODUCTS_2)
+
+# df.columns = df.columns.str.lower().str.replace(" ", "")
+# fixed_df, changes = update_all(df)
+
+# print("\n=== All Fixes ===")
+# for change in changes:
+#     print(change)
+
+
+
+
 
 
 # def main():
