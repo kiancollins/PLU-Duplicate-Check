@@ -5,6 +5,11 @@ import streamlit as st
 
 BAD_CHARS = set("',%")
 
+VAT_CODES = {0.0: 0,
+             23.0: 1,
+             13.5: 2,
+             9.0: 3}
+
 
 class Product:
 
@@ -87,4 +92,13 @@ class Product:
             return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less"
             # print(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
             # st.write(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
+
+
+
+
+
+
+
+
+
 
