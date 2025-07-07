@@ -1,9 +1,8 @@
 from decimal import Decimal
 from collections import Counter, defaultdict
 import streamlit as st
+from tools import *
 
-
-BAD_CHARS = set("',%")
 
 VAT_CODES = {0.0: 0,
              23.0: 1,
@@ -12,15 +11,14 @@ VAT_CODES = {0.0: 0,
 
 
 class Product:
-
     def __init__(self, code, description, subgroup, supplier_code, season, 
-                 supplier_main, cost_price, barcode, vat_rate, rrp, sell_price, stg_price, tarriff, web, idx=None):
+                 main_supplier, cost_price, barcode, vat_rate, rrp, sell_price, stg_price, tarriff, web, idx=None):
         self.plu_code = code
         self.description = description
         self.subgroup = subgroup
         self.supplier_code = supplier_code
         self.season = season
-        self.supplier_main = supplier_main
+        self.main_supplier = main_supplier
         self.cost = cost_price
         self.barcode = barcode
         self.vat_rate = vat_rate
@@ -33,7 +31,7 @@ class Product:
 
 
     def __repr__(self):
-        return f"Product {self.plu_code}: {self.description}>"
+        return f"Product {self.plu_code}: {self.description}"
 
 
     def __str__(self):
@@ -56,17 +54,6 @@ class Product:
             # st.write(f"Product: {self.plu_code} has description length of {len(str(self.plu_code))}. Must be under 15.")
 
 
-    def bad_char(self) -> str:
-        """ The characters ',% can't be in any product variables. Check if they have any and return where."""
-        bad_fields = []
-        for field, value in vars(self).items():     # Grab each variable and the value for the product
-                if isinstance(value, str):          # Avoid type error
-                    if any(char in value for char in BAD_CHARS):    # Check if any bad chars are in the value
-                        bad_fields.append(field)
-        if len(bad_fields) > 0:
-            return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} contains invalid character(s) {BAD_CHARS} in {bad_fields}"
-            # print(f"Product: {self.plu_code} contains invalid character(s) {BAD_CHARS} in {bad_fields}")
-            # st.write(f"Product: {self.plu_code} contains invalid characters {BAD_CHARS} in {bad_fields}")
 
 
     def decimal_format(self):
