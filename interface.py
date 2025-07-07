@@ -48,7 +48,7 @@ if file_type == "Product" and new_file and full_list_file:
     # Step 3: Load PLU list ---------
     try:
         # all_plu = get_all_plu(plu_file)
-        all_plu = read_column(full_list_file, "plu_code")
+        all_plu = read_column(full_list_file, POSSIBLE_PLU)
     except KeyError as e:
         st.error(f"Missing PLU column in full list: {e}")
         st.stop()
