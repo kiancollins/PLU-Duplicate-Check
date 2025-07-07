@@ -17,6 +17,10 @@ FULL_CLOTHING = "full_clothing_listing.xlsx"
 
 
 
+
+
+
+
 def load_products(path: str) -> list[Product]:
     """Load the new product file into a list of Clothing class objects"""
     df = pd.read_excel(path)
@@ -26,7 +30,7 @@ def load_products(path: str) -> list[Product]:
     for idx, row in df.iterrows():
         line_number = idx + 2
         product = Product(
-            code = normalizer(row.get('plucode')),
+            code = row.get(find_column(df, HEADER_MAP["plu_code"])),
             description = row.get('description'),
             subgroup = row.get('subgroup'),
             supplier_code = row.get('3digitsupplier'),
@@ -55,7 +59,7 @@ def load_clothing(path: str) -> list[Clothing]:
     for idx, row in df.iterrows():
         line_number = idx + 2
         clothing = Clothing(
-            code = normalizer(row.get('stylecode')),
+            code = row.get(find_column(df, HEADER_MAP["style_code"])),
             description = row.get('description'),
             size = row.get('size'),
             colour = row.get('colour'),
@@ -148,6 +152,18 @@ def check_clothing_duplicates(items: list[Clothing]):
 
 
 
+from collections import Counter
+
+
+# def check_types_in_column(values: list):
+#     type_counts = Counter(type(v).__name__ for v in values)
+#     print("Data types in list:")
+#     for t, count in type_counts.items():
+#         print(f"{t}: {count}")
+
+        
+# full_list = read_column("full_clothing_listing.xlsx", "PLU Code")
+# check_types_in_column(full_list)
 
 
 
