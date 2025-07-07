@@ -143,21 +143,31 @@ elif file_type == "Clothing" and new_file and full_list_file:
             st.error(f"Error loading new product file into Product objects: {e}")
             st.stop()
 
-        # Step 3: Load Clothing list ---------
-            try:
-                all_style_codes = read_column(full_list_file, "stylecode")
-            except KeyError as e:
-                st.error(f"Missing PLU column in PLU Active List: {e}")
-                st.stop()
-            except Exception as e:
-                st.error(f"Error reading PLU Active List: {e}")
-                st.stop()
+    # Step 3: Load Clothing list ---------
+        try:
+            all_style_codes = read_column(full_list_file, HEADER_MAP["style_code"])
+        except KeyError as e:
+            st.error(f"Missing PLU column in PLU Active List: {e}")
+            st.stop()
+        except Exception as e:
+            st.error(f"Error reading PLU Active List: {e}")
+            st.stop()
 
 
 
 
     # Error collection ---------
-        duplicate_styles = check_duplicates(clothes, full_list_file, "style_code")
+        print("=== Sample from clothing objects ===")
+        for c in clothes[:5]:
+            print(f"Style code: {c.style_code} → {normalizer(c.style_code)}")
+
+        print("\n=== Sample from full list ===")
+        for s in all_style_codes[:5]:
+            print(f"From full list: {s} → {normalizer(s)}")
+
+
+
+        duplicate_styles = check_duplicates(clothes, all_style_codes, "style_code")
         duplicate_style_errors = [
             f"Line: {line + 2} \u00A0\u00A0|\u00A0\u00A0 Item {style_code} is already in the system."  # +2 to match Excel row (header + 0-indexed)
             for style_code, line in duplicate_styles.items()
