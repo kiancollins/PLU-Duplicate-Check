@@ -3,6 +3,7 @@ from decimal import Decimal
 from collections import Counter, defaultdict
 from product_class import Product
 import math
+from tools import *
 
 
 BAD_CHARS = set("',%")
@@ -67,16 +68,14 @@ def fix_vat(df: pd.DataFrame):
 
 
 
-def update_all(df: pd.DataFrame):
+def update_all_products(df: pd.DataFrame):
     """Call fix functions and returns updated dataframe (a copy)"""
-    df1, desc_changes = fix_description(df)
-    df2, decimal_changes = fix_decimals(df1)
-    df3, vat_changes = fix_vat(df2)
+    new_description, desc_changes = fix_description(df)
+    new_decimals, decimal_changes = fix_decimals(new_description)
+    new_vat, vat_changes = fix_vat(new_decimals)
     # print("Final columns available:", df.columns.tolist())
 
-    return df3, desc_changes + decimal_changes + vat_changes
-
-
+    return new_vat, desc_changes + decimal_changes + vat_changes
 
 
 
