@@ -7,9 +7,10 @@ import doctest
 
 BAD_CHARS = set("',%")
 POSSIBLE_PLU = ["plu", "plu code", "plucode", "plu-code", "plu_code"]
-HEADER_MAP = {
-    "plu_code": ["plu", "plu code", "plucode", "plu-code"],
-    "style_code": ["stylecode", "style code", "style-code", "style_code"],
+POSSIBLE_STYLE_CODES = ["style code", "stylecode", "style_code", "style-code"]
+
+PRODUCT_HEADER_MAP = {
+    "plu_code": ["plu", "plu code", "plucode", "plu-code", "plu_code"],
     "description": ["description", "desc"],
     "subgroup": ["subgroup", "category"],
     "supplier_code": ["3digitsupplier", "suppliercode"],
@@ -24,6 +25,29 @@ HEADER_MAP = {
     "tarriff": ["tarriffcode", "tarrif"],
     "web": ["web"],
     
+}
+
+CLOTHING_HEADER_MAP = {
+    "style_code": ["stylecode", "style code", "style-code", "style_code"],
+    "description": ["description", "desc"],
+    "size": ["size"],
+    "colour": ["colour", "color"],
+    "subgroup": ["subgroup", "category", "sub group"],
+    "supplier_code": ["3digitsupplier", "supplier code", "suppliercode"],
+    "season": ["season"],
+    "main_supplier": ["mainsupplier", "main supplier"],
+    "cost_price": ["costprice", "cost price", "cost"],
+    "barcode": ["barcode", "bar code"],
+    "vat_rate": ["vatrate", "vat rate", "vat"],
+    "rrp": ["rrp"],
+    "sell_price": ["sellingprice", "selling price", "sellprice"],
+    "stg_price": ["stgretailprice", "stg retail price", "stgprice"],
+    "tarriff": ["tarriffcode", "tarriff code", "tariff", "tarrif"],
+    "brand": ["brandinstore", "brand in store", "brand"],
+    "product_type": ["producttype", "product type"],
+    "web": ["web", "online", "website"],
+    "country": ["countryoforigin", "country of origin", "origin"],
+    "country_code": ["countrycode", "country code"],
 }
 
 
@@ -85,5 +109,19 @@ def find_column(df: pd.DataFrame, possible_names: dict):
     return None
 
 
+def check_missing_columns(df: pd.DataFrame, header_map: dict[str, list[str]]) -> list[str]:
+    """
+    Checks for missing expected headers in a DataFrame using a HEADER_MAP.
+    
+    Returns a list of standardized keys (like 'plu_code', 'style_code') 
+    for which none of the possible column names were found.
+    """
+    normalized_df_cols = {normalize_header(c) for c in df.columns}
+    missing = []
 
+    for key, possibilities in header_map.items():
+        found = any(normalize_header(name) in normalized_df_cols for name in possibilities)
+        if not found:
+            missing.append(key)
+    return missing
 
