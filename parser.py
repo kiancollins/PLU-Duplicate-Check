@@ -143,16 +143,14 @@ def check_clothing_duplicates(items: list[Clothing]):
     errors = []
 
     for item in items:
-        key = (item.style_code, item.size)
+        key = (item.style_code, item.size, item.colour)
         if key in exists:
-            errors.append(f"Duplicate: Style {item.style_code} with size {item.size} on line {item.excel_line}")
+            errors.append(f"Duplicate Style {item.style_code} with size {item.size} on line {item.excel_line}")
         else:
             exists.add(key)
     return errors
 
 
-
-from collections import Counter
 
 
 # def check_types_in_column(values: list):
