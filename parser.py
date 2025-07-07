@@ -3,17 +3,22 @@ from product_class import Product
 from decimal import Decimal
 from collections import Counter, defaultdict
 import streamlit as st
-from fixes import update_all
+from fix_products import update_all_products
+from clothing_class import Clothing
+from fix_clothing import update_all_clothing
+from tools import *
 
 
-NEW_PRODUCTS = "0107025 GARDEN FRESH.xlsx" 
-NEW_PRODUCTS_2 = "JAVADO UPLOAD.xlsx"
+NEW_PRODUCTS_GARDEN = "0107025 GARDEN FRESH.xlsx" 
+NEW_PRODUCTS_JAVADO = "JAVADO UPLOAD.xlsx"
 PLU_ACTIVE = "PLU-Active-List.xlsx"
-# TEST_PLU_CODES = [123456, 543216, 483917, 391034, 320110, 481326] #last 2 are real products
+CLOTHING_UPLOAD = "clothing upload example.xlsx"
+FULL_CLOTHING = "full_clothing_listing.xlsx"
 
 
 
 def load_products(path: str) -> list[Product]:
+    """Load the new product file into a list of Clothing class objects"""
     df = pd.read_excel(path)
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "")
 
@@ -21,12 +26,12 @@ def load_products(path: str) -> list[Product]:
     for idx, row in df.iterrows():
         line_number = idx + 2
         product = Product(
-            code = row.get('plucode'),
+            code = normalizer(row.get('plucode')),
             description = row.get('description'),
             subgroup = row.get('subgroup'),
             supplier_code = row.get('3digitsupplier'),
             season = row.get('season'),
-            supplier_main = row.get('mainsupplier'),
+            main_supplier = row.get('mainsupplier'),
             cost_price = row.get('costprice'),
             barcode = row.get('barcode'),
             vat_rate = row.get('vatrate'),
@@ -38,50 +43,71 @@ def load_products(path: str) -> list[Product]:
             idx = line_number
         )
         products.append(product)
-
     return products
 
 
-def get_all_plu(path: str) -> list[int]:
-    """ Read an excel of all AVOCA products into a list of PLU codes """
-    # plu_df = pd.read_excel(path)
-    # plu_df.columns = plu_df.columns.str.lower().str.strip().str.replace(" ", "")
-    # # print("Columns after normalization:", plu_df.columns.tolist())
-    # return plu_df["plu"].tolist()
+def load_clothing(path: str) -> list[Clothing]:
+    """Load the new clothing file into a list of Clothing class objects"""
+    df = pd.read_excel(path)
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "")
 
-    plu_df = pd.read_excel(path)
-    print("Raw columns:", plu_df.columns.tolist())  # <-- print raw header
-    plu_df.columns = plu_df.columns.str.lower().str.strip().str.replace(" ", "")
-    print("Normalized columns:", plu_df.columns.tolist())  # <-- print normalized header
+    clothes = []
+    for idx, row in df.iterrows():
+        line_number = idx + 2
+        clothing = Clothing(
+            code = normalizer(row.get('stylecode')),
+            description = row.get('description'),
+            size = row.get('size'),
+            colour = row.get('colour'),
+            subgroup = row.get('subgroup'),
+            supplier_code = row.get('3digitsupplier'),
+            season = row.get('season'),
+            main_supplier = row.get('mainsupplier'),
+            cost_price = row.get('cost'), # Different from products, only "Cost", products was "Cost Price"
+            barcode = row.get('barcode'),
+            vat_rate = row.get('vatrate'),
+            rrp = row.get('rrp'),
+            sell_price = row.get('sellingprice'),
+            stg_price = row.get('stgretailprice'),  # Different from from products
+            tarriff = row.get('tarriffcode'),
+            brand = row.get('brandinstore'),
+            product_type = row.get('producttype'),
+            web = row.get('web'),
+            country = row.get('countryoforigin'),
+            country_code = row.get('countrycode'),
+            idx = line_number
+        )
+        clothes.append(clothing)
+    return clothes
 
-    if "plu" not in plu_df.columns:
-        raise KeyError("Missing 'plu' column after normalization.")
-
-    return plu_df["plu"].tolist()
 
 
-def check_duplicates(products: list[Product], all_products: list) -> dict[int, int]:
-    """ Returns dictionary of duplicate products' codes and what line they are at.
+def check_duplicates(items: list[Product | Clothing], full_list: list, attr: str) -> dict[int, int]:
+    """ Returns dictionary of what item codes are already used in the full list.
+        attr should be entered as the class variable name 
     """
     duplicates = {}
-    for product in products:
-        if product.plu_code in all_products:
-            duplicates[product.plu_code] = all_products.index(product.plu_code)
+    for item in items:
+        value = normalizer((getattr(item, attr, None)))
+        if value in full_list:
+            duplicates[value] = full_list.index(value)
     return duplicates
 
 
-def duplicate_barcodes(products: list[Product]) -> list[str]:
+
+def duplicate_barcodes(items: list[Product | Clothing], attr:str) -> list[str]:
     """ Checks to see if any products in new product file has the same barcodes."""
-    barcode_to_plu = defaultdict(list)
+    barcode_to_code = defaultdict(list)
     error_list = []
 
-    for product in products:
-        if product.barcode:  # Skip empty or None
-            barcode_to_plu[product.barcode].append((product.plu_code, product.excel_line))
+    for item in items:
+        if item.barcode:  # Skip empty or None
+            id = normalizer(getattr(item, attr, None))
+            barcode_to_code[item.barcode].append((id, item.excel_line))
 
-    for barcode, plu_list in barcode_to_plu.items():
-        if len(plu_list) > 1:
-            detail = ", ".join([f"{plu} (line {line})" for plu, line in plu_list])
+    for barcode, codes in barcode_to_code.items():
+        if len(codes) > 1:
+            detail = ", ".join([f"{code} (line {line})" for code, line in codes])
             error_list.append(f"Barcode {barcode} is shared by: {detail}")
             # print(f"Barcode {barcode} is shared by Products: {plu_list}")
             # st.write(f"Barcode {barcode} is shared by Products: {plu_list}")
@@ -91,125 +117,43 @@ def duplicate_barcodes(products: list[Product]) -> list[str]:
     return None
 
 
-def find_internal_duplicates(products: list[Product]) -> list[str]:
-    """Checks for duplicate PLU codes within the new product file."""
-    counts = Counter(product.plu_code for product in products)
+
+def check_internal_duplicates(items: list[Product | Clothing], attr:str) -> dict[int, int]:
+    """ Checks if there are any duplicate codes within the new file
+        attr should be entered as the class variable name """
     errors = []
-    for plu, count in counts.items():
+    values = [normalizer(getattr(item, attr, None)) for item in items]
+    counts = Counter(values)
+    for code, count in counts.items():
         if count > 1:
-            lines = [product.excel_line for product in products if product.plu_code == plu]
-            errors.append(f"PLU Code: {plu} appears {count} times on lines {lines}")
+            lines = [item.excel_line for item in items if normalizer(getattr(item, attr, None)) == code]
+            errors.append(f"Code: {code} appears {count} times on lines {lines}")
     return errors
 
 
-# df = get_all_plu(PLU_ACTIVE)
+def check_clothing_duplicates(items: list[Clothing]):
+    """ Check if there are duplicate clothing items within a new file. 
+        Clothing is done differently since there can be multiple style codes with different sizes.
+    """
+    exists = set()
+    errors = []
 
-
-# products = load_products(NEW_PRODUCTS_2)
-# for product in products:
-#     print(product.excel_line)
-
-
-# df = pd.read_excel(NEW_PRODUCTS_2)
-
-# df.columns = df.columns.str.lower().str.replace(" ", "")
-# fixed_df, changes = update_all(df)
-
-# print("\n=== All Fixes ===")
-# for change in changes:
-#     print(change)
-
+    for item in items:
+        key = (item.style_code, item.size)
+        if key in exists:
+            errors.append(f"Duplicate: Style {item.style_code} with size {item.size} on line {item.excel_line}")
+        else:
+            exists.add(key)
+    return errors
 
 
 
 
 
-# def main():
-
-#     products = load_products(JAVADO)
-#     # for product in products:
-#     #     print(product)
-#     # #     print(product.barcode)
-#     # #     print(product.tarriff)
-
-#     all_products = get_all_plu(PLU_ACTIVE)
-#     # print(all_products)
-
-#     output = check_duplicates(products, all_products) # Output after duplicate check
-#     # print(output)
 
 
-
-#     # for i in range(5):
-#     #    print(all_products[i])
-
-#     # for key, value in output.items():
-#     #    print(f"Duplicate item with PLU: {key} at line {(value)}")
-   
-#     plu_errors = []
-#     desc_len_errors = []
-#     bad_char_errors = []
-#     decimal_errors = []
-
-#     for product in products:
-#         if product.plu_len() is not None:
-#             plu_errors.append(product.plu_len())
-
-#     for product in products:
-#         if product.desc_len() is not None:
-#             desc_len_errors.append(product.desc_len())
-
-#     for product in products:
-#         if product.bad_char() is not None:
-#             bad_char_errors.append(product.bad_char())
-   
-#     for product in products:
-#         if product.decimal_format() is not None:
-#             decimal_errors.append(product.decimal_format())
-
-
-
-#     if len(plu_errors) > 0:
-#         print("\n All PLU Code Length Errors:")
-#         for error in plu_errors:
-#             print(error)
-#             # st.write(error)
-#     else:
-#         print("\n PLU Codes are all valid.")
-
-#     if len(desc_len_errors) > 0:
-#         print("\n All Product Description Length Errors:")
-#         for error in desc_len_errors:
-#             print(error)
-#             # st.write(error)
-#     else:
-#         print("\n Product descriptions are all valid.")
-
-    
-#     if len(bad_char_errors) > 0:
-#         print("\n All Unusable Character Errors:")
-#         for error in bad_char_errors:
-#             print(error)
-#             # st.write(error)
-#     else:
-#         print("\n Characters are all valid.")
-
-#     if len(decimal_errors) > 0:
-#         print("\nAll Decimal Formatting Erors:")
-#         for error in decimal_errors:
-#             print(error)
-#             # st.write(error)
-#     else:
-#         print("\n Decimal formatting is all valid.")
-
-#     if duplicate_barcodes(products) is not None:
-#         print("\n All Duplicate Barcode Errors:")
-#         print(duplicate_barcodes(products))
-#         # st.write(duplicate_barcodes(products))
-#     else:
-#         print("\n Barcodes are all valid.")
-
-
-# if __name__ == "__main__":
-#     main()
+# products = load_products(CLOTHING_UPLOAD)
+# full_list = read_column(FULL_CLOTHING, "stylecode")
+# print(products[:10])
+# print(full_list[:10])
 
