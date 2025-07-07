@@ -9,7 +9,7 @@ BAD_CHARS = set("',%")
 POSSIBLE_PLU = ["plu", "plu code", "plucode", "plu-code", "plu_code"]
 HEADER_MAP = {
     "plu_code": ["plu", "plu code", "plucode", "plu-code"],
-    "style_code": ["stylecode, style code, style-code, style_code"],
+    "style_code": ["stylecode", "style code", "style-code", "style_code"],
     "description": ["description", "desc"],
     "subgroup": ["subgroup", "category"],
     "supplier_code": ["3digitsupplier", "suppliercode"],
