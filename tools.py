@@ -6,51 +6,56 @@ import doctest
 
 
 BAD_CHARS = set("',%")
-
-
-# def smart_parse(value):
-#     """Converts pure numbers to int. Leaves mixed/letter/symbol codes as lowercased strings.
-#         Extremely helpful for making sure all numbers continue being read as numbers and everything else is read as strings"""
-#     value_str = str(value).strip()
+POSSIBLE_PLU = ["plu", "plu code", "plucode", "plu-code", "plu_code"]
+HEADER_MAP = {
+    "plu_code": ["plu", "plu code", "plucode", "plu-code"],
+    "style_code": ["stylecode, style code, style-code, style_code"],
+    "description": ["description", "desc"],
+    "subgroup": ["subgroup", "category"],
+    "supplier_code": ["3digitsupplier", "suppliercode"],
+    "season": ["season"],
+    "main_supplier": ["mainsupplier", "main supplier"],
+    "cost_price": ["costprice", "cost"],
+    "barcode": ["barcode", "bar code"],
+    "vat_rate": ["vatrate", "vat"],
+    "rrp": ["rrp"],
+    "sell_price": ["sellingprice", "sellprice"],
+    "stg_price": ["stgprice", "stgretailprice"],
+    "tarriff": ["tarriffcode", "tarrif"],
+    "web": ["web"],
     
-#     # If it's all digits (optionally ending in .0), treat as numeric
-#     if value_str.replace('.', '', 1).isdigit():
-#         try:
-#             return int(float(value_str))  # Handles 487170.0 or "29899.0"
-#         except ValueError:
-#             pass  # fall back to string below
-
-#     # Else return cleaned, lowercased string
-#     return value_str
+}
 
 
 def normalizer(value):
     """ Given value is outputted as a string."""
-    return str(value).strip()
+    return str(value)
 
 
+def normalize_header(value):
+    """ Given header is outputted in a normalized format"""
+    return str(value).strip().lower().replace(" ", "").replace("_", "").replace("-", "")
 
-def read_column(file_path, column_name) -> list:
+
+def read_column(file_path, possible_names) -> list:
     """Find the given column name and return that column as a list.
-    Leaves numbers as numbers; strips strings."""
+    Converts all objects to strings"""
     try:
         df = pd.read_excel(file_path)
-        target = column_name.strip().lower().replace(" ", "").replace("_", "").replace("-", "")
+        normalized_cols = {normalize_header(col): col for col in df.columns}
 
-        for col in df.columns:
-            normalized = col.strip().lower().replace(" ", "").replace("_", "").replace("-", "")
-            if normalized == target:
-                return df[col].dropna().apply(lambda x: x.strip() if isinstance(x, str) else x).tolist()
+        for name in possible_names:
+            normalized = normalize_header(name)
+            if normalized in normalized_cols:
+                return df[normalized_cols[normalized]].dropna().apply(normalizer).tolist()
         
-        print(f"Column '{column_name}' not found.")
+        print(f"Column Name not found: Looking in {possible_names}")
         return []
 
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
         return []
     
-
-
 
 def bad_char(obj, id_attr: str) -> str:
     """ The characters ',% can't be in any product variables. Check if they have any and return where.
@@ -66,4 +71,19 @@ def bad_char(obj, id_attr: str) -> str:
             line = getattr(obj, "excel_line", None)
             id = getattr(obj, id_attr, None)
             return f"Line {line} \u00A0\u00A0|\u00A0\u00A0 {id} contains invalid character(s) {BAD_CHARS}"
+
+
+
+def find_column(df: pd.DataFrame, possible_names: dict):
+    """ Identify column based on a possible names reference dictionary """
+
+    normalized_cols = {normalize_header(col): col for col in df.columns}
+    for name in possible_names:
+        key = normalize_header(name)
+        if key in normalized_cols:
+            return normalized_cols[key]
+    return None
+
+
+
 
