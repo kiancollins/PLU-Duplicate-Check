@@ -17,33 +17,29 @@ FULL_CLOTHING = "full_clothing_listing.xlsx"
 
 
 
-
-
-
-
 def load_products(path: str) -> list[Product]:
     """Load the new product file into a list of Clothing class objects"""
     df = pd.read_excel(path)
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "")
 
     products = []
+    get_col = lambda key: find_column(df, PRODUCT_HEADER_MAP[key])
     for idx, row in df.iterrows():
         line_number = idx + 2
         product = Product(
-            code = row.get(find_column(df, HEADER_MAP["plu_code"])),
-            description = row.get('description'),
-            subgroup = row.get('subgroup'),
-            supplier_code = row.get('3digitsupplier'),
-            season = row.get('season'),
-            main_supplier = row.get('mainsupplier'),
-            cost_price = row.get('costprice'),
-            barcode = row.get('barcode'),
-            vat_rate = row.get('vatrate'),
-            rrp = row.get('rrp'),
-            sell_price = row.get('sellingprice'),
-            stg_price = row.get('stgprice'),   
-            tarriff = row.get('tarriffcode'),
-            web = row.get('web'),
+            code = row.get(get_col("plu_code")),
+            description = row.get(get_col("description")),
+            subgroup = row.get(get_col("subgroup")),
+            supplier_code = row.get(get_col("supplier_code")),
+            season = row.get(get_col("season")),
+            main_supplier = row.get(get_col("main_supplier")),
+            cost_price = row.get(get_col("cost_price")),
+            barcode = row.get(get_col("barcode")),
+            vat_rate = row.get(get_col("vat_rate")),
+            rrp = row.get(get_col("rrp")),
+            sell_price = row.get(get_col("sell_price")),
+            stg_price = row.get(get_col("stg_price")),
+            tarriff = row.get(get_col("tarriff")),
+            web = row.get(get_col("web")),
             idx = line_number
         )
         products.append(product)
@@ -53,32 +49,31 @@ def load_products(path: str) -> list[Product]:
 def load_clothing(path: str) -> list[Clothing]:
     """Load the new clothing file into a list of Clothing class objects"""
     df = pd.read_excel(path)
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "")
-
     clothes = []
+    get_col = lambda key: find_column(df, CLOTHING_HEADER_MAP[key])
     for idx, row in df.iterrows():
         line_number = idx + 2
         clothing = Clothing(
-            code = row.get(find_column(df, HEADER_MAP["style_code"])),
-            description = row.get('description'),
-            size = row.get('size'),
-            colour = row.get('colour'),
-            subgroup = row.get('subgroup'),
-            supplier_code = row.get('3digitsupplier'),
-            season = row.get('season'),
-            main_supplier = row.get('mainsupplier'),
-            cost_price = row.get('cost'), # Different from products, only "Cost", products was "Cost Price"
-            barcode = row.get('barcode'),
-            vat_rate = row.get('vatrate'),
-            rrp = row.get('rrp'),
-            sell_price = row.get('sellingprice'),
-            stg_price = row.get('stgretailprice'),  # Different from from products
-            tarriff = row.get('tarriffcode'),
-            brand = row.get('brandinstore'),
-            product_type = row.get('producttype'),
-            web = row.get('web'),
-            country = row.get('countryoforigin'),
-            country_code = row.get('countrycode'),
+            code = row.get(get_col("style_code")),
+            description = row.get(get_col("description")),
+            size = row.get(get_col("size")),
+            colour = row.get(get_col("colour")),
+            subgroup = row.get(get_col("subgroup")),
+            supplier_code = row.get(get_col("supplier_code")),
+            season = row.get(get_col("season")),
+            main_supplier = row.get(get_col("main_supplier")),
+            cost_price = row.get(get_col("cost_price")),  # Note: products use "cost_price"
+            barcode = row.get(get_col("barcode")),
+            vat_rate = row.get(get_col("vat_rate")),
+            rrp = row.get(get_col("rrp")),
+            sell_price = row.get(get_col("sell_price")),
+            stg_price = row.get(get_col("stg_price")),  # products: "stg_price", clothing: "stgretailprice"
+            tarriff = row.get(get_col("tarriff")),
+            brand = row.get(get_col("brand")),
+            product_type = row.get(get_col("product_type")),
+            web = row.get(get_col("web")),
+            country = row.get(get_col("country")),
+            country_code = row.get(get_col("country_code")),
             idx = line_number
         )
         clothes.append(clothing)
