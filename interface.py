@@ -2,60 +2,74 @@ import pandas as pd
 import streamlit as st
 from collections import defaultdict, Counter
 from product_class import Product  # Make sure this is in the same folder or Python path
-from parser import load_products, get_all_plu, duplicate_barcodes, check_duplicates, find_internal_duplicates
-from fixes import update_all
+from parser import * 
+from fix_products import update_all_products
+from fix_clothing import update_all_clothing
 import io
+from tools import *
+
+
+ERROR_TYPES = {"All Duplicate PLU Code Errors": "PLU Codes are all valid.", 
+               "Duplicate PLUs Within Uploaded File": "No Duplicate PLU Codes.",
+               "All PLU Code Length Errors": "PLU Code lengths are all valid.",
+               "All Product Description Length Errors": "Product descriptions are all valid.",
+               "All Unusable Character Errors": "No unusable characters found.",
+               "All Decimal Formatting Errors": "All numbers rounded correctly.",
+               "All Duplicate Barcode Errors": "All barcodes are valid."}
+
 
 
 st.title("New Product File Validation")
+file_type = st.selectbox("Select File Type", ["Product", "Clothing"])
 
 # File uploads
-new_product_file = st.file_uploader("Upload New Product File", type=["xlsx"])
-plu_file = st.file_uploader("Upload PLU Active List", type=["xlsx"])
+new_file = st.file_uploader(f"Upload New {file_type} File", type=["xlsx"])
+full_list_file = st.file_uploader("Upload PLU Active List", type=["xlsx"])
 
 # # Proceed only if both files uploaded
-if new_product_file and plu_file:
+if file_type == "Product" and new_file and full_list_file:
 
     # Step 1: Read and normalize new product file for auto fixes ---------
     try:
-        df = pd.read_excel(new_product_file)
+        df = pd.read_excel(new_file)
         df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")
-        fixed_df, auto_changes = update_all(df)
+        fixed_df, auto_changes = update_all_products(df)
     except Exception as e:
         st.error(f"Error reading or fixing new product file: {e}")
         st.stop()
 
     # Step 2: Load as Product class objects ----------
     try:
-        products = load_products(new_product_file)
+        products = load_products(new_file)
     except Exception as e:
         st.error(f"Error loading new product file into Product objects: {e}")
         st.stop()
 
     # Step 3: Load PLU list ---------
     try:
-        all_plu = get_all_plu(plu_file)
+        # all_plu = get_all_plu(plu_file)
+        all_plu = read_column(full_list_file, "plu_code")
     except KeyError as e:
-        st.error(f"Missing PLU column in PLU Active List: {e}")
+        st.error(f"Missing PLU column in full list: {e}")
         st.stop()
     except Exception as e:
         st.error(f"Error reading PLU Active List: {e}")
         st.stop()
     
 
-
     # Error collection ---------
-    duplicate_plu_dict = check_duplicates(products, all_plu)
+    # duplicate_plu_dict = check_duplicates(products, all_plu)
+    duplicate_plu_dict = check_duplicates(products, all_plu, "plu_code")
     duplicate_plu_errors = [
         f"Line: {line + 2} \u00A0\u00A0|\u00A0\u00A0 Product {plu} is already in the system."  # +2 to match Excel row (header + 0-indexed)
         for plu, line in duplicate_plu_dict.items()
     ]
-    internal_duplicates = find_internal_duplicates(products)
+    internal_duplicates = check_internal_duplicates(products, "plu_code")
     plu_errors = []
-    desc_errors = []
-    bad_char_errors =[]
+    prod_desc_errors = []
+    prod_bad_char_errors = []
     decimal_errors =[]
-    barcode_errors = duplicate_barcodes(products)
+    prod_barcode_errors = duplicate_barcodes(products, "plu_code")
     
 
     # Check all products and store in proper lists
@@ -63,9 +77,9 @@ if new_product_file and plu_file:
         if (e := product.plu_len()):
             plu_errors.append(e)
         if (e := product.desc_len()):
-            desc_errors.append(e)
-        if (e := product.bad_char()):
-            bad_char_errors.append(e)
+            prod_desc_errors.append(e)
+        if (e := bad_char(product, "plu_code")):
+            prod_bad_char_errors.append(e)
         if (e := product.decimal_format()):
             decimal_errors.append(e)
         
@@ -77,22 +91,20 @@ if new_product_file and plu_file:
             for e in errors:
                 st.write(e)
         else:
-            st.subheader(f"{title.replace(' Errors', '')} are all valid.")
+            st.subheader(ERROR_TYPES.get(title, "All checks passed."))
 
     display_results("All Duplicate PLU Code Errors", duplicate_plu_errors)
     display_results("Duplicate PLUs Within Uploaded File", internal_duplicates)
     display_results("All PLU Code Length Errors", plu_errors)
-    display_results("All Product Description Length Errors", desc_errors)
-    display_results("All Unusable Character Errors", bad_char_errors)
+    display_results("All Product Description Length Errors", prod_desc_errors)
+    display_results("All Unusable Character Errors", prod_bad_char_errors)
     display_results("All Decimal Formatting Errors", decimal_errors)
-    display_results("All Duplicate Barcode Errors", barcode_errors)
-
+    display_results("All Duplicate Barcode Errors", prod_barcode_errors)
 
     # If no errors
     if not any([duplicate_plu_errors, internal_duplicates, plu_errors, 
-                desc_errors, bad_char_errors, decimal_errors, barcode_errors]):
+                prod_desc_errors, prod_bad_char_errors, decimal_errors, prod_barcode_errors]):
         st.success("All checks passed. File is ready for upload.")
-
 
     # Auto fixing ------------------
     if auto_changes:
@@ -107,9 +119,107 @@ if new_product_file and plu_file:
         st.download_button(
             label="Download Fixed Version",
             data=buffer.getvalue(),
-            file_name="Fixed_Product_File.xlsx",
+            file_name= f"Fixed-{new_file.name}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+
+
+elif file_type == "Clothing" and new_file and full_list_file:
+        # Step 1: Read and normalize new clothing file for auto fixes ---------
+
+        try:
+            df = pd.read_excel(new_file)
+            df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")
+            fixed_df, auto_changes = update_all_clothing(df)
+        except Exception as e:
+            st.error(f"Error reading or fixing new clothing file: {e}")
+            st.stop()
+
+        # Step 2: Load as Product class objects ----------
+        try:
+            clothes = load_clothing(new_file)
+        except Exception as e:
+            st.error(f"Error loading new product file into Product objects: {e}")
+            st.stop()
+
+        # Step 3: Load Clothing list ---------
+            try:
+                all_style_codes = read_column(full_list_file, "stylecode")
+            except KeyError as e:
+                st.error(f"Missing PLU column in PLU Active List: {e}")
+                st.stop()
+            except Exception as e:
+                st.error(f"Error reading PLU Active List: {e}")
+                st.stop()
+
+
+
+
+    # Error collection ---------
+        duplicate_styles = check_duplicates(clothes, full_list_file, "style_code")
+        duplicate_style_errors = [
+            f"Line: {line + 2} \u00A0\u00A0|\u00A0\u00A0 Item {style_code} is already in the system."  # +2 to match Excel row (header + 0-indexed)
+            for style_code, line in duplicate_styles.items()
+        ]
+        internal_duplicates = check_clothing_duplicates(clothes)
+        style_len_errors = []
+        colour_len_errors = []
+        clothing_bad_char_errors =[]
+        clothing_decsc_errors =[]
+        clothing_barcode_errors = duplicate_barcodes(clothes, "style_code")
+        
+
+        # Check all items and store in proper lists
+        for item in clothes:
+            if (e := item.style_len()):
+                style_len_errors.append(e)
+            if (e := item.colour_len()):
+                colour_len_errors.append(e)
+            if (e := bad_char(item, "style_code")):
+                clothing_bad_char_errors.append(e)
+            if (e := item.desc_len()):
+                clothing_decsc_errors.append(e)
+
+            
+
+        # Show results
+        def display_results(title, errors):
+            if errors:
+                st.subheader(title)
+                for e in errors:
+                    st.write(e)
+            else:
+                st.subheader(ERROR_TYPES.get(title, "All checks passed."))
+
+        display_results("All Duplicate Style Code Code Errors", duplicate_style_errors)
+        display_results("Duplicate Style Codes Within Uploaded File", internal_duplicates)
+        display_results("All Style Code Length Errors", style_len_errors)
+        display_results("All Clothing Item Description Length Errors", clothing_decsc_errors)
+        display_results("All Unusable Character Errors", clothing_bad_char_errors)
+        display_results("All Duplicate Barcode Errors", clothing_barcode_errors)
+
+        # If no errors
+        if not any([duplicate_style_errors, internal_duplicates, style_len_errors, clothing_decsc_errors, 
+        clothing_bad_char_errors, clothing_barcode_errors]):
+            st.success("All checks passed. File is ready for upload.")
+
+        # Auto fixing ------------------
+        if auto_changes:
+            st.write("\n")
+            st.title("Automatically fixed Errors:")
+            for change in auto_changes:
+                st.write(change)
+
+            # Convert to Excel in memory
+            buffer = io.BytesIO()
+            fixed_df.to_excel(buffer, index=False)
+            st.download_button(
+                label="Download Fixed Version",
+                data=buffer.getvalue(),
+                file_name= f"Fixed-{new_file.name}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
 
 
