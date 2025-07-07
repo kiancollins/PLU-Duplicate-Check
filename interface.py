@@ -9,13 +9,24 @@ import io
 from tools import *
 
 
-ERROR_TYPES = {"All Duplicate PLU Code Errors": "PLU Codes are all valid.", 
-               "Duplicate PLUs Within Uploaded File": "No Duplicate PLU Codes.",
-               "All PLU Code Length Errors": "PLU Code lengths are all valid.",
-               "All Product Description Length Errors": "Product descriptions are all valid.",
-               "All Unusable Character Errors": "No unusable characters found.",
-               "All Decimal Formatting Errors": "All numbers rounded correctly.",
-               "All Duplicate Barcode Errors": "All barcodes are valid."}
+ERROR_TYPES = {
+    # Product checks
+    "All Duplicate PLU Code Errors": "PLU Codes are all valid.", 
+    "Duplicate PLUs Within Uploaded File": "No Duplicate PLU Codes.",
+    "All PLU Code Length Errors": "PLU Code lengths are all valid.",
+    "All Product Description Length Errors": "Product descriptions are all valid.",
+    "All Decimal Formatting Errors": "All numbers rounded correctly.",
+
+    # Shared
+    "All Unusable Character Errors": "No unusable characters found.",
+    "All Duplicate Barcode Errors": "All barcodes are valid.",
+
+    # Clothing checks
+    "All Duplicate Style Code Code Errors": "Style Codes are all valid.",
+    "Duplicate Style Codes Within Uploaded File": "No Duplicate Style Codes.",
+    "All Style Code Length Errors": "Style Code lengths are all valid.",
+    "All Clothing Item Description Length Errors": "Descriptions are all valid.",
+}
 
 
 
@@ -31,9 +42,16 @@ if file_type == "Product" and new_file and full_list_file:
 
     # Step 1: Read and normalize new product file for auto fixes ---------
     try:
-        df = pd.read_excel(new_file)
-        df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")
-        fixed_df, auto_changes = update_all_products(df)
+        df = pd.read_excel(new_file)                                            # Read in file
+        # df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")    # Get columns
+        missing = check_missing_columns(df, PRODUCT_HEADER_MAP)                         # Check missing columns
+        if missing:
+            st.warning(f"Columns not found in new file: {','.join(missing)}")
+        else:
+            st.success(f"All expected columns found in new file.")
+        
+        fixed_df, auto_changes = update_all_products(df)                        # Apply auto-changes
+
     except Exception as e:
         st.error(f"Error reading or fixing new product file: {e}")
         st.stop()
@@ -130,8 +148,13 @@ elif file_type == "Clothing" and new_file and full_list_file:
 
         try:
             df = pd.read_excel(new_file)
-            df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")
-            fixed_df, auto_changes = update_all_clothing(df)
+            missing = check_missing_columns(df, CLOTHING_HEADER_MAP)                         # Check missing columns
+            if missing:
+                st.warning(f"Columns not found in new file: {','.join(missing)}")
+            else:
+                st.success(f"All expected columns found in new file.")
+            
+            fixed_df, auto_changes = update_all_clothing(df)         
         except Exception as e:
             st.error(f"Error reading or fixing new clothing file: {e}")
             st.stop()
@@ -140,17 +163,17 @@ elif file_type == "Clothing" and new_file and full_list_file:
         try:
             clothes = load_clothing(new_file)
         except Exception as e:
-            st.error(f"Error loading new product file into Product objects: {e}")
+            st.error(f"Error loading new clothing file into Clothing objects: {e}")
             st.stop()
 
     # Step 3: Load Clothing list ---------
         try:
-            all_style_codes = read_column(full_list_file, HEADER_MAP["style_code"])
+            all_style_codes = read_column(full_list_file, CLOTHING_HEADER_MAP["style_code"])
         except KeyError as e:
-            st.error(f"Missing PLU column in PLU Active List: {e}")
+            st.error(f"Missing Style Code column in full items list: {e}")
             st.stop()
         except Exception as e:
-            st.error(f"Error reading PLU Active List: {e}")
+            st.error(f"Error reading full items list: {e}")
             st.stop()
 
 
