@@ -17,9 +17,8 @@ VAT_CODES = {0.0: 0,
 
 def fix_description(df: pd.DataFrame):
     """Remove any bad characters and cut description down to 50 characters"""
-    df_fixed = df.copy()
     changes = []
-    for i, desc in df_fixed['description'].items():
+    for i, desc in df['description'].items():
         if isinstance(desc, str):
             og_desc = desc
             cleaned = ''.join(c for c in desc if c not in BAD_CHARS)
@@ -33,43 +32,43 @@ def fix_description(df: pd.DataFrame):
                 changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 Long description: '{og_desc}' shortened to '{final}'")
             
             if desc != final:
-                df_fixed.at[i, 'description'] = final
-    return df_fixed, changes
+                df.at[i, 'description'] = final
+    return df, changes
             
 
 
 def fix_decimals(df: pd.DataFrame):
     """Update the decimal rounding/format to the correct 2 decimal places"""
-    df_fixed = df.copy()
     columns = ['costprice', 'rrp', 'sellingprice', 'stgprice']
     changes = []
     for column in columns:
-        for i, num in df_fixed[column].items():
+        for i, num in df[column].items():
             if isinstance(num, (int, float)) and not math.isnan(num):
                 decimal_val = Decimal(str(num))
                 if -decimal_val.as_tuple().exponent > 2:
                     new_num = round(num, 2)
-                    df_fixed.at[i, column] = new_num
+                    df.at[i, column] = new_num
                     changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 {column} of {num} rounded to {new_num}")
-    return df_fixed, changes
+    return df, changes
 
 
 def fix_vat(df: pd.DataFrame):
     """Assign the correct VAT codes for given percentages"""
-    df_fixed = df.copy()
     changes = []
-    for i, vat in df_fixed['vatrate'].items():
+    for i, vat in df['vatrate'].items():
 
         if vat in VAT_CODES:
             new_vat = VAT_CODES[vat]
-            df_fixed.at[i, 'vatrate'] = new_vat
+            df.at[i, 'vatrate'] = new_vat
             changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 VAT Rate {vat} updated to code {new_vat}")
-    return df_fixed, changes
+    return df, changes
 
 
 
 def update_all_products(df: pd.DataFrame):
     """Call fix functions and returns updated dataframe (a copy)"""
+    df = df.copy()
+    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
     new_description, desc_changes = fix_description(df)
     new_decimals, decimal_changes = fix_decimals(new_description)
     new_vat, vat_changes = fix_vat(new_decimals)
