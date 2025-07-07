@@ -83,7 +83,7 @@ def fix_color(df: pd.DataFrame):
                 changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 Bad characters removed from color description: '{og_desc}', updated to '{cleaned}'")
                         
             if len(cleaned) > 10:
-                final = cleaned[:50]
+                final = cleaned[:10]
                 changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 Long color description: '{og_desc}' shortened to '{final}'")
             
             if desc != final:
