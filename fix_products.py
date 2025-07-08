@@ -42,6 +42,8 @@ def fix_decimals(df: pd.DataFrame):
     columns = ['costprice', 'rrp', 'sellingprice', 'stgprice']
     changes = []
     for column in columns:
+        if column not in df.columns:
+            continue
         for i, num in df[column].items():
             if isinstance(num, (int, float)) and not math.isnan(num):
                 decimal_val = Decimal(str(num))
@@ -65,16 +67,16 @@ def fix_vat(df: pd.DataFrame):
 
 
 
-# def update_all_products(df: pd.DataFrame):
-#     """Call fix functions and returns updated dataframe (a copy)"""
-#     df = df.copy()
-#     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
-#     new_description, desc_changes = fix_description(df)
-#     new_decimals, decimal_changes = fix_decimals(new_description)
-#     new_vat, vat_changes = fix_vat(new_decimals)
-#     # print("Final columns available:", df.columns.tolist())
+def update_all_products(df: pd.DataFrame):
+    """Call fix functions and returns updated dataframe (a copy)"""
+    df = df.copy()
+    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
+    new_description, desc_changes = fix_description(df)
+    new_decimals, decimal_changes = fix_decimals(new_description)
+    new_vat, vat_changes = fix_vat(new_decimals)
+    # print("Final columns available:", df.columns.tolist())
 
-#     return new_vat, desc_changes + decimal_changes + vat_changes
+    return new_vat, desc_changes + decimal_changes + vat_changes
 
 
 def update_all_products(df: pd.DataFrame):
@@ -86,8 +88,8 @@ def update_all_products(df: pd.DataFrame):
     df, desc_changes = fix_description(df)
     changes_by_type["Description Fixes"] = desc_changes
 
-    df, decimal_changes = fix_decimals(df)
-    changes_by_type["Decimal Fixes"] = decimal_changes
+    # df, decimal_changes = fix_decimals(df)
+    # changes_by_type["Decimal Fixes"] = decimal_changes
 
     df, vat_changes = fix_vat(df)
     changes_by_type["VAT Fixes"] = vat_changes
