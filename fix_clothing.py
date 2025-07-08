@@ -88,15 +88,36 @@ def fix_color(df: pd.DataFrame):
 
 
 
+# def update_all_clothing(df: pd.DataFrame):
+#     """Call fix functions and returns updated dataframe (a copy)"""
+#     df = df.copy()
+#     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
+#     new_description, desc_changes = fix_description(df)
+#     new_decimals, decimal_changes = fix_decimals(new_description)
+#     new_vat, vat_changes = fix_vat(new_decimals)
+#     new_color, color_changes = fix_color(new_vat)
+#     # print("Final columns available:", df.columns.tolist())
+
+#     return new_color, desc_changes + decimal_changes + vat_changes+ color_changes
+
+
+
 def update_all_clothing(df: pd.DataFrame):
-    """Call fix functions and returns updated dataframe (a copy)"""
     df = df.copy()
     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
-    new_description, desc_changes = fix_description(df)
-    new_decimals, decimal_changes = fix_decimals(new_description)
-    new_vat, vat_changes = fix_vat(new_decimals)
-    new_color, color_changes = fix_color(new_vat)
-    # print("Final columns available:", df.columns.tolist())
+    
+    changes = {}
 
-    return new_color, desc_changes + decimal_changes + vat_changes+ color_changes
+    df, desc_changes = fix_description(df)
+    changes["Description Fixes"] = desc_changes
 
+    df, decimal_changes = fix_decimals(df)
+    changes["Decimal Fixes"] = decimal_changes
+
+    df, vat_changes = fix_vat(df)
+    changes["VAT Fixes"] = vat_changes
+
+    df, color_changes = fix_color(df)
+    changes["Color Fixes"] = color_changes
+
+    return df, changes
