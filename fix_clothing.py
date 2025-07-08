@@ -40,9 +40,11 @@ def fix_description(df: pd.DataFrame):
 
 def fix_decimals(df: pd.DataFrame):
     """Update the decimal rounding/format to the correct 2 decimal places"""
-    columns = ['cost', 'rrp', 'sellingprice', 'stgretailprice']
+    columns = ['costprice', 'rrp', 'sellingprice', 'stgprice']
     changes = []
     for column in columns:
+        if column not in df.columns:
+            continue
         for i, num in df[column].items():
             if isinstance(num, (int, float)) and not math.isnan(num):
                 decimal_val = Decimal(str(num))
@@ -51,6 +53,7 @@ def fix_decimals(df: pd.DataFrame):
                     df.at[i, column] = new_num
                     changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 {column} of {num} rounded to {new_num}")
     return df, changes
+
 
 
 
@@ -85,20 +88,6 @@ def fix_color(df: pd.DataFrame):
             if desc != final:
                 df.at[i, 'colour'] = final
     return df, changes
-
-
-
-# def update_all_clothing(df: pd.DataFrame):
-#     """Call fix functions and returns updated dataframe (a copy)"""
-#     df = df.copy()
-#     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
-#     new_description, desc_changes = fix_description(df)
-#     new_decimals, decimal_changes = fix_decimals(new_description)
-#     new_vat, vat_changes = fix_vat(new_decimals)
-#     new_color, color_changes = fix_color(new_vat)
-#     # print("Final columns available:", df.columns.tolist())
-
-#     return new_color, desc_changes + decimal_changes + vat_changes+ color_changes
 
 
 
