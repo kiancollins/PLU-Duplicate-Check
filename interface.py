@@ -54,6 +54,12 @@ if file_type == "Product" and new_file and full_list_file:
 # Step 1: Read and normalize new product file for auto fixes ---------
     try:
         df = pd.read_excel(new_file)                                            # Read in file
+
+        expected_headers = [name for sublist in PRODUCT_HEADER_MAP.values() for name in sublist]
+        header_row = detect_header_row(new_file, expected_headers)
+        df = pd.read_excel(new_file, header=header_row)
+        df.columns = [normalize_header(c) for c in df.columns]
+
         missing = check_missing_columns(df, PRODUCT_HEADER_MAP)                         # Check missing columns
         if missing:
             st.warning(f"Columns not found in new file: {','.join(missing)}")
@@ -68,15 +74,33 @@ if file_type == "Product" and new_file and full_list_file:
 
 # Step 2: Load as Product class objects ----------
     try:
-        products = load_products(new_file)
+        products, messages = load_products(new_file) # was new file
+        missing = []
+        for message, type in messages:
+            if type == "alert":
+                st.success(message)
+            elif type == "error":
+                missing.append(message)
+        if missing:
+            st.warning(f"Searched for, but couldn't find columns: {missing} in new file upload.")
+
+
     except Exception as e:
         st.error(f"Error loading new product file into Product objects: {e}")
         st.stop()
 
 # Step 3: Load PLU list ---------
     try:
-        # all_plu = get_all_plu(plu_file)
-        all_plu = read_column(full_list_file, POSSIBLE_PLU)
+        full_list, message, type = read_column(full_list_file, POSSIBLE_PLU)
+        missing = []
+        if message:
+            if type == "alert":
+                st.success(message)
+            elif type == "error":
+                missing.append(message)
+        if missing:
+            st.warning(f"Searched for, but couldn't find columns: {missing} in full list upload.")
+
     except KeyError as e:
         st.error(f"Missing PLU column in full list: {e}")
         st.stop()
@@ -87,7 +111,7 @@ if file_type == "Product" and new_file and full_list_file:
 
 # Error collection ---------
 # duplicate_plu_dict = check_duplicates(products, all_plu)
-    duplicate_plu_dict = check_duplicates(products, all_plu, "plu_code")
+    duplicate_plu_dict = check_duplicates(products, full_list, "plu_code")
     duplicate_plu_errors = [
         f"Line: {line + 2} \u00A0\u00A0|\u00A0\u00A0 Product {plu} is already in the system."  # +2 to match Excel row (header + 0-indexed)
         for plu, line in duplicate_plu_dict.items()
@@ -104,20 +128,20 @@ if file_type == "Product" and new_file and full_list_file:
     for product in products:
         if (e := product.plu_len()):
             plu_errors.append(e)
-        if (e := product.desc_len()):
-            prod_desc_errors.append(e)
+        # if (e := product.desc_len()):
+        #     prod_desc_errors.append(e)
         if (e := bad_char(product, "plu_code")):
             prod_bad_char_errors.append(e)
-        if (e := product.decimal_format()):
-            decimal_errors.append(e)
+        # if (e := product.decimal_format()):
+        #     decimal_errors.append(e)
         
 # Display errors
     display_results("Duplicate PLU Code Errors", duplicate_plu_errors)
     display_results("Duplicate PLUs Within Uploaded File", internal_duplicates)
     display_results("PLU Code Length Errors", plu_errors)
-    display_results("Product Description Length Errors", prod_desc_errors)
+    # display_results("Product Description Length Errors", prod_desc_errors)
     display_results("Unusable Character Errors", prod_bad_char_errors)
-    display_results("Decimal Formatting Errors", decimal_errors)
+    # display_results("Decimal Formatting Errors", decimal_errors)
     display_results("Duplicate Barcode Errors", prod_barcode_errors)
 
 
@@ -126,7 +150,7 @@ if file_type == "Product" and new_file and full_list_file:
                 prod_desc_errors, prod_bad_char_errors, decimal_errors, prod_barcode_errors]):
         st.success("All checks passed. File is ready for upload.")
 
-    if auto_changes:
+    elif len(auto_changes.items()) > len(auto_changes.keys()):
         st.write("\n")
         st.title("Automatically Fixed Errors:")
 
@@ -143,18 +167,23 @@ if file_type == "Product" and new_file and full_list_file:
             label="Download Fixed Version",
             data=buffer.getvalue(),
             file_name= f"Fixed-{new_file.name}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    else:
+        st.title("No Auto-fixes Found")
 
 
 elif file_type == "Clothing" and new_file and full_list_file:
 # Step 1: Read and normalize new clothing file for auto fixes ---------
 
     try:
-        df = pd.read_excel(new_file)
+        expected_headers = [name for sublist in CLOTHING_HEADER_MAP.values() for name in sublist]
+        header_row = detect_header_row(new_file, expected_headers)
+        df = pd.read_excel(new_file, header=header_row)
+        df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")
+
         missing = check_missing_columns(df, CLOTHING_HEADER_MAP)                         # Check missing columns
         if missing:
-            st.warning(f"Columns not found in new file: {','.join(missing)}")
+            st.warning(f"Columns not found in new file: {', '.join(missing)}")
         else:
             st.success(f"All expected columns found in new file.")
         
@@ -165,14 +194,26 @@ elif file_type == "Clothing" and new_file and full_list_file:
 
 # Step 2: Load as Product class objects ----------
     try:
-        clothes = load_clothing(new_file)
+        clothes, messages = load_clothing(new_file)
+        for message, type, in messages:
+            if type == "alert":
+                st.success(message)
+            elif type == "error":
+                st.error(message)
+
     except Exception as e:
         st.error(f"Error loading new clothing file into Clothing objects: {e}")
         st.stop()
 
 # Step 3: Load Clothing list ---------
     try:
-        all_style_codes = read_column(full_list_file, CLOTHING_HEADER_MAP["style_code"])
+        all_style_codes, message, type = read_column(full_list_file, CLOTHING_HEADER_MAP["style_code"])
+        if message:
+            if type == "alert":
+                st.success(message)
+            elif type == "error":
+                st.error(message)
+
     except KeyError as e:
         st.error(f"Missing Style Code column in full items list: {e}")
         st.stop()
@@ -182,14 +223,14 @@ elif file_type == "Clothing" and new_file and full_list_file:
 
 
 
-# Error collection ---------
-    print("=== Sample from clothing objects ===")
-    for c in clothes[:5]:
-        print(f"Style code: {c.style_code} → {normalizer(c.style_code)}")
+# # Error collection ---------
+#     print("=== Sample from clothing objects ===")
+#     for c in clothes[:5]:
+#         print(f"Style code: {c.style_code} → {normalizer(c.style_code)}")
 
-    print("\n=== Sample from full list ===")
-    for s in all_style_codes[:5]:
-        print(f"From full list: {s} → {normalizer(s)}")
+#     print("\n=== Sample from full list ===")
+#     for s in all_style_codes[:5]:
+#         print(f"From full list: {s} → {normalizer(s)}")
 
 
 
@@ -210,11 +251,11 @@ elif file_type == "Clothing" and new_file and full_list_file:
     for item in clothes:
         if (e := item.style_len()):
             style_len_errors.append(e)
-        if (e := item.colour_len()):
+        # if (e := item.colour_len()):
             colour_len_errors.append(e)
         if (e := bad_char(item, "style_code")):
             clothing_bad_char_errors.append(e)
-        if (e := item.desc_len()):
+        # if (e := item.desc_len()):
             clothing_decsc_errors.append(e)
 
             
@@ -222,7 +263,8 @@ elif file_type == "Clothing" and new_file and full_list_file:
     display_results("All Duplicate Style Code Code Errors", duplicate_style_errors)
     display_results("Duplicate Style Codes Within Uploaded File", internal_duplicates)
     display_results("All Style Code Length Errors", style_len_errors)
-    display_results("All Clothing Item Description Length Errors", clothing_decsc_errors)
+    # display_results("All Clothing Item Description Length Errors", clothing_decsc_errors)
+    # display_results("All Color Length Description Errors", colour_len_errors)
     display_results("All Unusable Character Errors", clothing_bad_char_errors)
     display_results("All Duplicate Barcode Errors", clothing_barcode_errors)
 
@@ -233,7 +275,7 @@ elif file_type == "Clothing" and new_file and full_list_file:
         st.success("All checks passed. File is ready for upload.")
 
 # Auto fixing ------------------
-    if auto_changes:
+    elif len(auto_changes.items()) > len(auto_changes.keys()):
         st.write("\n")
         st.title("Automatically Fixed Errors:")
 
@@ -252,6 +294,8 @@ elif file_type == "Clothing" and new_file and full_list_file:
             file_name= f"Fixed-{new_file.name}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+    else:
+        st.title("No Auto-fixes Found")
 
 
 
