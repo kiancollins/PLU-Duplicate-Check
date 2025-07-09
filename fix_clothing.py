@@ -70,9 +70,13 @@ def fix_vat(df: pd.DataFrame):
 
 
 def fix_color(df: pd.DataFrame):
-    """Shorten colour descriptions that are over 10 characters"""
+    """Shorten colour descriptions that are over 10 characters. Also remove bad characters"""
     changes = []
-    for i, desc in df['colour'].items():
+    color_col, *_ = find_column(df, PRODUCT_HEADER_MAP["colour"])
+    if color_col is None or color_col not in df.columns:
+        return df, []
+
+    for i, desc in df[color_col].items():
         if isinstance(desc, str):
             og_desc = desc
             cleaned = ''.join(c for c in desc if c not in BAD_CHARS)
@@ -80,20 +84,18 @@ def fix_color(df: pd.DataFrame):
 
             if og_desc != cleaned:
                 changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 Bad characters removed from color description: '{og_desc}', updated to '{cleaned}'")
-                        
             if len(cleaned) > 10:
                 final = cleaned[:10]
                 changes.append(f"Line {i+2} \u00A0\u00A0|\u00A0\u00A0 Long color description: '{og_desc}' shortened to '{final}'")
-            
             if desc != final:
-                df.at[i, 'colour'] = final
+                df.at[i, color_col] = final
     return df, changes
 
 
 
 def update_all_clothing(df: pd.DataFrame):
     df = df.copy()
-    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
+    # df.columns = df.columns.str.lower().str.strip().str.replace(" ", "")  # Normalize here
     
     changes = {}
 
