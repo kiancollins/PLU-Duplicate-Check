@@ -51,21 +51,25 @@ class Clothing:
             # st.write(f"Product: {self.style_code} has Style Code length of {len(str(self.style_code))}. Must be under 12.")
 
 
-    def colour_len(self):
-        """ Checks if any products have a color code length over 10"""
-        if len(str(self.colour)) > 10:
-            return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Clothing item: {self.style_code} has Colour Code length of {len(str(self.colour))}. Must be under 10."
-            # print(f"Product: {self.style_code} has Style Code length of {len(str(self.style_code))}. Must be under 12.")
-            # st.write(f"Product: {self.style_code} has Style Code length of {len(str(self.style_code))}. Must be under 12.")
+
+# Commented out because we have auto-fixing
+
+    # def colour_len(self):
+    #     """ Checks if any products have a color code length over 10"""
+    #     if len(str(self.colour)) > 10:
+    #         return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Clothing item: {self.style_code} has Colour Code length of {len(str(self.colour))}. Must be under 10."
+    #         # print(f"Product: {self.style_code} has Style Code length of {len(str(self.style_code))}. Must be under 12.")
+    #         # st.write(f"Product: {self.style_code} has Style Code length of {len(str(self.style_code))}. Must be under 12.")
 
 
+# Commented out because we have auto-fixing
 
-    def desc_len(self):
-            """ Checks if any products have a Description length over 50"""
-            if len(self.description) > 50:
-                return(f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Item: {self.style_code} has description length of {len(str(self.description))}. Must be under 50.")
-                # print(f"Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
-                # st.write(f"Product: {self.plu_code} has description length of {len(str(self.plu_code))}. Must be under 15.")
+    # def desc_len(self):
+    #         """ Checks if any products have a Description length over 50"""
+    #         if len(self.description) > 50:
+    #             return(f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Item: {self.style_code} has description length of {len(str(self.description))}. Must be under 50.")
+    #             # print(f"Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
+    #             # st.write(f"Product: {self.plu_code} has description length of {len(str(self.plu_code))}. Must be under 15.")
 
 
 
