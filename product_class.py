@@ -46,39 +46,43 @@ class Product:
             # st.write(f"Product: {self.plu_code} has PLU Code length of {len(str(self.plu_code))}. Must be under 15.")
 
         
-    def desc_len(self):
-        """ Checks if any products have a Description length over 50"""
-        if len(self.description) > 50:
-            return(f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
-            # print(f"Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
-            # st.write(f"Product: {self.plu_code} has description length of {len(str(self.plu_code))}. Must be under 15.")
+        
+# Commented out because we have auto-fixing
 
 
+    # def desc_len(self):
+    #     """ Checks if any products have a Description length over 50"""
+    #     if len(self.description) > 50:
+    #         return(f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
+    #         # print(f"Product: {self.plu_code} has description length of {len(str(self.description))}. Must be under 50.")
+    #         # st.write(f"Product: {self.plu_code} has description length of {len(str(self.plu_code))}. Must be under 15.")
 
 
-    def decimal_format(self):
-        """Cost price, RRP, selling price, and trade price must all be 2 decimal places or less."""
-        errors = []
-        fields = { # Avoid errors if the field is empty with getattr
-            'cost price': self.cost,
-            'rrp': getattr(self, 'rrp', None),
-            'selling price': getattr(self, 'sell_price', None),
-            'trade price': getattr(self, 'stg_price', None)
-        }
+# Commented out because we have auto-fixing
 
-        for key, value in fields.items():
-            if value != None:
-                try:
-                    decimal_value = Decimal(str(value))
-                    if -(decimal_value.as_tuple().exponent) > 2:
-                        errors.append(key)
-                except Exception as e:
-                    ... # Often times trade price (stg_price) will just be empty
+    # def decimal_format(self):
+    #     """Cost price, RRP, selling price, and trade price must all be 2 decimal places or less."""
+    #     errors = []
+    #     fields = { # Avoid errors if the field is empty with getattr
+    #         'cost price': self.cost,
+    #         'rrp': getattr(self, 'rrp', None),
+    #         'selling price': getattr(self, 'sell_price', None),
+    #         'trade price': getattr(self, 'stg_price', None)
+    #     }
 
-        if len(errors) > 0:
-            return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less"
-            # print(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
-            # st.write(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
+    #     for key, value in fields.items():
+    #         if value != None:
+    #             try:
+    #                 decimal_value = Decimal(str(value))
+    #                 if -(decimal_value.as_tuple().exponent) > 2:
+    #                     errors.append(key)
+    #             except Exception as e:
+    #                 ... # Often times trade price (stg_price) will just be empty
+
+    #     if len(errors) > 0:
+    #         return f"Line {self.excel_line} \u00A0\u00A0|\u00A0\u00A0 Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less"
+    #         # print(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
+    #         # st.write(f"Product: {self.plu_code} has decimal place error in {errors}. Must be 2 decimal places or less")
 
 
 
